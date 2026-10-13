@@ -1,0 +1,207 @@
+{
+  "name": "ExceptionOS - PDF Purchase Order Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/purchase-orders/process",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  po_number: $json.po_number,\n  customer: $json.customer,\n  items: $json.items,\n  ship_to: $json.ship_to\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-140, -100],
+      "id": "0b40c439-a1ad-408c-adaa-9f9ff1abc16b",
+      "name": "Process through ExceptionOS"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "972bbbf0-49aa-416f-8676-c87eb6cef0c7",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "created",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [80, -100],
+      "id": "7a8c0710-b540-4494-9c72-896d8e42da06",
+      "name": "Was Order Created?"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\n  po_number: $json.po_number,\n  customer: $json.customer,\n  items: $json.items,\n  ship_to: $json.ship_to\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-360, -100],
+      "id": "9c1c684e-3cea-483b-a1c2-069366f41949",
+      "name": "Create Purchase Order"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f733bb99-3adb-4355-b50a-3296992c75e0",
+              "name": "outcome",
+              "value": "order_created",
+              "type": "string"
+            },
+            {
+              "id": "0f55d352-2e71-49b2-8f4b-cc7c7a4fb77a",
+              "name": "message",
+              "value": "The purchase order was successfully created in the ERP",
+              "type": "string"
+            },
+            {
+              "id": "6e1e6356-d4f9-46c4-ac02-fcc90723cc94",
+              "name": "erp_order_id",
+              "value": "={{ $json.erp_order_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [300, -200],
+      "id": "1d50f6b5-b190-45bc-92da-571532ce1c72",
+      "name": "Order Created"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dc1939ce-3431-45a4-9a76-eb5cf06496ea",
+              "name": "outcome",
+              "value": "human_review_required",
+              "type": "string"
+            },
+            {
+              "id": "5768d039-b553-4cdc-b6bb-536093e0b382",
+              "name": "message",
+              "value": "The purchase order requires human review",
+              "type": "string"
+            },
+            {
+              "id": "4112b716-71f3-45e0-87e1-fa32f8279cfd",
+              "name": "review_id",
+              "value": "={{ $json.review_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ed875268-4a1b-4743-a109-6341a78722ff",
+              "name": "issues",
+              "value": "={{ $json.issues }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [300, 0],
+      "id": "fffbb1d6-42e3-45c1-87e6-29d406a38b7a",
+      "name": "Human Review Required"
+    },
+    {
+      "parameters": {
+        "formTitle": "ExceptionOS Purchase Order Upload",
+        "formDescription": "Upload a purchase-order PDF for extraction and processing.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "purchase_order_pdf",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [-920, -100],
+      "id": "1557661d-d20e-4700-87d6-fefd4e995838",
+      "name": "Upload Purchase Order PDF"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/purchase-orders/extract-pdf",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "purchase_order_pdf"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-620, -100],
+      "id": "3889ab1f-3c57-48db-b134-778c3989cfd9",
+      "name": "Extract PDF through ExceptionOS"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Process through ExceptionOS": {
+      "main": [[{"node": "Was Order Created?", "type": "main", "index": 0}]]
+    },
+    "Create Purchase Order": {
+      "main": [[{"node": "Process through ExceptionOS", "type": "main", "index": 0}]]
+    },
+    "Was Order Created?": {
+      "main": [
+        [{"node": "Order Created", "type": "main", "index": 0}],
+        [{"node": "Human Review Required", "type": "main", "index": 0}]
+      ]
+    },
+    "Upload Purchase Order PDF": {
+      "main": [[{"node": "Extract PDF through ExceptionOS", "type": "main", "index": 0}]]
+    },
+    "Extract PDF through ExceptionOS": {
+      "main": [[{"node": "Create Purchase Order", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

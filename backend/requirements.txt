@@ -1,0 +1,10 @@
+fastapi
+groq
+httpx
+pytest
+python-dotenv
+psycopg[binary]
+pymupdf
+pypdf
+python-multipart
+uvicorn
