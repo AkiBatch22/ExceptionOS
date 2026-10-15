@@ -1,19 +1,26 @@
+from time import perf_counter
+
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from backend.app.schemas.extraction import (
     EmailPurchaseOrderExtraction,
     PurchaseOrderExtraction,
+    PurchaseOrderExtractionResult,
     PurchaseOrderText,
 )
 from backend.app.schemas.purchase_order import PurchaseOrder
 from backend.app.services.assessment import assess_purchase_order
 from backend.app.services.audit import get_events
 from backend.app.services.customers import check_customer
+from backend.app.services.correction_memory import find_suggestions
+from backend.app.services.documents import store_document
 from backend.app.services.email import parse_purchase_order_email
 from backend.app.services.extraction import extract_purchase_order
+from backend.app.services.extraction_quality import assess_extraction_quality
 from backend.app.services.inventory import check_inventory
+from backend.app.services.audit import record_event
 from backend.app.services.inbox_import import NoImportableEmail, import_next_email
-from backend.app.services.pdf import extract_pdf_text
+from backend.app.services.pdf import extract_pdf_text, split_pdf_pages
 from backend.app.services.pricing import check_prices
 from backend.app.services.processing import process_purchase_order
 
@@ -30,38 +37,98 @@ async def read_upload(file: UploadFile):
     return content
 
 
-@router.post("/extract", response_model=PurchaseOrderExtraction)
+def extraction_result(
+    extraction: PurchaseOrderExtraction,
+    text: str,
+    started_at: float,
+    document_id: str | None = None,
+):
+    duration_ms = round((perf_counter() - started_at) * 1000)
+    result = PurchaseOrderExtractionResult(
+        **extraction.model_dump(),
+        document_id=document_id,
+        extraction_quality=assess_extraction_quality(extraction, text),
+        suggested_corrections=find_suggestions(extraction),
+    )
+    if extraction.po_number:
+        record_event(
+            extraction.po_number,
+            "extraction_completed",
+            {
+                "duration_ms": duration_ms,
+                "document_id": document_id,
+                "item_count": len(extraction.items),
+                "quality_score": result.extraction_quality.score,
+            },
+        )
+    return result
+
+
+@router.post(
+    "/extract",
+    response_model=PurchaseOrderExtractionResult,
+    response_model_exclude_none=True,
+)
 def extract(request: PurchaseOrderText):
+    started_at = perf_counter()
     try:
-        return extract_purchase_order(request.text)
+        extraction = extract_purchase_order(request.text)
+        return extraction_result(
+            extraction,
+            request.text,
+            started_at,
+        )
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
         raise HTTPException(status_code=502, detail="AI extraction failed") from error
 
 
-@router.post("/extract-pdf", response_model=PurchaseOrderExtraction)
+@router.post(
+    "/extract-pdf",
+    response_model=PurchaseOrderExtractionResult,
+    response_model_exclude_none=True,
+)
 async def extract_pdf(file: UploadFile = File(...)):
+    started_at = perf_counter()
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=415, detail="Upload a PDF file")
 
+    content = await read_upload(file)
     try:
-        text = extract_pdf_text(await read_upload(file))
+        text = extract_pdf_text(content)
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
     try:
-        return extract_purchase_order(text)
+        extraction = extract_purchase_order(text)
+        document_id = store_document(
+            file.filename or "purchase-order.pdf",
+            "application/pdf",
+            content,
+            split_pdf_pages(text),
+        )
+        return extraction_result(
+            extraction,
+            text,
+            started_at,
+            document_id,
+        )
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
         raise HTTPException(status_code=502, detail="AI extraction failed") from error
 
 
-@router.post("/extract-email", response_model=EmailPurchaseOrderExtraction)
+@router.post(
+    "/extract-email",
+    response_model=EmailPurchaseOrderExtraction,
+    response_model_exclude_none=True,
+)
 async def extract_email(file: UploadFile = File(...)):
+    started_at = perf_counter()
     filename = file.filename or ""
 
     if file.content_type != "message/rfc822" and not filename.lower().endswith(
@@ -78,7 +145,19 @@ async def extract_email(file: UploadFile = File(...)):
         raise HTTPException(status_code=422, detail=str(error)) from error
 
     try:
-        purchase_order = extract_purchase_order(text)
+        extraction = extract_purchase_order(text)
+        document_id = store_document(
+            email["attachment_name"],
+            "application/pdf",
+            email["pdf_bytes"],
+            split_pdf_pages(text),
+        )
+        purchase_order = extraction_result(
+            extraction,
+            text,
+            started_at,
+            document_id,
+        )
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
@@ -136,8 +215,11 @@ def assess(purchase_order: PurchaseOrder):
 
 
 @router.post("/process")
-def process(purchase_order: PurchaseOrder):
-    return process_purchase_order(purchase_order)
+def process(
+    purchase_order: PurchaseOrder,
+    document_id: str | None = None,
+):
+    return process_purchase_order(purchase_order, document_id)
 
 
 @router.get("/{po_number}/events")

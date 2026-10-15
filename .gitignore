@@ -5,3 +5,4 @@ __pycache__/
 *.py[cod]
 frontend/.next/
 frontend/node_modules/
+backend/tests/regression_cases/latest-results.json

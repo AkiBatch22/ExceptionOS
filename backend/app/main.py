@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from backend.app.api.routes.email_imports import router as email_imports_router
+from backend.app.api.routes.erp_orders import router as erp_orders_router
+from backend.app.api.routes.documents import router as documents_router
 from backend.app.api.routes.purchase_orders import router as purchase_orders_router
 from backend.app.api.routes.reviews import router as reviews_router
 from backend.app.core.readiness import check_readiness
@@ -30,6 +32,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(email_imports_router)
+app.include_router(erp_orders_router)
+app.include_router(documents_router)
 app.include_router(purchase_orders_router)
 app.include_router(reviews_router)
 

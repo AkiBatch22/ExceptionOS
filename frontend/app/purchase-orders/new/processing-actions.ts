@@ -25,10 +25,18 @@ export async function processPurchaseOrder(
 
   const apiUrl = process.env.API_URL ?? "http://127.0.0.1:8000";
   const messageId = formData.get("message_id");
+  const documentId = formData.get("document_id");
   const isEmailImport = typeof messageId === "string" && messageId.length > 0;
-  const query = isEmailImport
-    ? `?${new URLSearchParams({ message_id: messageId })}`
-    : "";
+  const queryParameters = new URLSearchParams();
+  if (isEmailImport) queryParameters.set("message_id", messageId);
+  if (
+    !isEmailImport &&
+    typeof documentId === "string" &&
+    documentId.length > 0
+  ) {
+    queryParameters.set("document_id", documentId);
+  }
+  const query = queryParameters.size > 0 ? `?${queryParameters}` : "";
   const endpoint = isEmailImport ? "/email-imports/process" : "/purchase-orders/process";
   let response: Response;
 
@@ -52,9 +60,22 @@ export async function processPurchaseOrder(
     };
   }
 
-  if (isEmailImport) {
-    revalidatePath("/");
-  }
+  const poNumber = purchaseOrder.po_number;
+  const feedback = [
+    ...formData.getAll("accepted_pattern_ids").map((id) => ({ id, feedback: "accepted" })),
+    ...formData.getAll("rejected_pattern_ids").map((id) => ({ id, feedback: "rejected" })),
+  ];
+  await Promise.allSettled(
+    feedback.map(({ id, feedback: patternFeedback }) =>
+      fetch(`${apiUrl}/reviews/patterns/${encodeURIComponent(String(id))}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback: patternFeedback, po_number: poNumber }),
+      }),
+    ),
+  );
+
+  revalidatePath("/");
 
   return {
     result: (await response.json()) as ProcessingState["result"],

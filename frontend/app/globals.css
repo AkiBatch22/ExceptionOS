@@ -13,6 +13,34 @@ body {
   margin: 0;
 }
 
+.appNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px max(24px, calc((100% - 760px) / 2));
+  border-bottom: 1px solid #dce1ea;
+  background: #ffffff;
+}
+
+.appNav a {
+  color: #4a5264;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.appNav .appBrand {
+  color: #5d3fd3;
+  font-size: 16px;
+}
+
+.appNav > div {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
 main {
   width: min(760px, calc(100% - 32px));
   margin: 0 auto;
@@ -55,6 +83,25 @@ h1 {
   border-radius: 8px;
   color: #ffffff;
   background: #5d3fd3;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.secondaryLink {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 9px 13px;
+  border: 1px solid #5d3fd3;
+  border-radius: 8px;
+  color: #5d3fd3;
+  background: #ffffff;
   font-weight: 700;
   text-decoration: none;
 }
@@ -170,11 +217,81 @@ h1 {
 }
 
 .itemList li {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
   padding-top: 10px;
   border-top: 1px solid #edf0f5;
+}
+
+.itemList li > strong {
+  width: 100%;
+}
+
+.orderMetadata,
+.financialSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-top: 16px;
+  color: #667085;
+}
+
+.financialSummary {
+  padding-top: 18px;
+  border-top: 1px solid #edf0f5;
+}
+
+.financialSummary > div {
+  display: grid;
+  gap: 4px;
+  min-width: 110px;
+  text-transform: capitalize;
+}
+
+.sourceLookup {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.sourceButton {
+  padding: 6px 10px;
+  border: 1px solid #8b79da;
+  border-radius: 6px;
+  color: #5d3fd3;
+  background: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sourceButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.sourceResult {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid #dcd5fa;
+  border-radius: 8px;
+  background: #f8f6ff;
+  color: #4a5264;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.sourceResult a {
+  display: inline-block;
+  margin-top: 8px;
+  color: #5d3fd3;
+  font-weight: 700;
+}
+
+.cachedLabel {
+  margin-left: 12px;
+  color: #667085;
 }
 
 .issueList {
@@ -337,6 +454,34 @@ h1 {
   background: #fff8f0;
 }
 
+.qualitySummary {
+  margin-top: 24px;
+  padding: 16px;
+  border-left: 4px solid #8b79da;
+  background: #f8f6ff;
+}
+
+.qualitySummary.medium {
+  border-left-color: #d17a22;
+  background: #fff8f0;
+}
+
+.qualitySummary.low {
+  border-left-color: #cc4545;
+  background: #fff4f4;
+}
+
+.qualitySummary ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+}
+
+.qualitySummary p {
+  margin-top: 10px;
+  color: #667085;
+  font-size: 13px;
+}
+
 .missingFields h3 {
   margin: 0;
 }
@@ -374,7 +519,8 @@ h1 {
   font-weight: 700;
 }
 
-.confirmationForm input {
+.confirmationForm input,
+.confirmationForm textarea {
   min-width: 0;
   padding: 10px 12px;
   border: 1px solid #bfc7d5;
@@ -382,7 +528,12 @@ h1 {
   font: inherit;
 }
 
-.confirmationForm input:focus {
+.confirmationForm textarea {
+  resize: vertical;
+}
+
+.confirmationForm input:focus,
+.confirmationForm textarea:focus {
   border-color: #5d3fd3;
   outline: 2px solid #dcd5fa;
 }
@@ -394,12 +545,22 @@ h1 {
 
 .editableItems fieldset {
   display: grid;
-  grid-template-columns: 1fr 140px 140px;
+  grid-template-columns: 1fr 1fr 130px 130px;
   gap: 12px;
   margin: 0;
   padding: 16px;
   border: 1px solid #dce1ea;
   border-radius: 10px;
+}
+
+.wideItemField {
+  grid-column: span 2;
+}
+
+.totalsGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .editableItems legend {
@@ -419,6 +580,11 @@ h1 {
 .processButton {
   color: #ffffff;
   background: #5d3fd3;
+}
+
+.humanReviewButton {
+  color: #ffffff;
+  background: #b85c12;
 }
 
 .assessmentResult {
@@ -453,7 +619,172 @@ h1 {
   margin-top: 8px;
 }
 
+.memorySuggestion,
+.memoryApplied,
+.memoryIgnored {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 12px;
+  border: 1px solid #e8c88b;
+  border-radius: 8px;
+  background: #fff9ed;
+  color: #5d4721;
+}
+
+.memorySuggestion small,
+.memoryIgnored {
+  color: #6d6250;
+}
+
+.memorySuggestion div,
+.memoryApplied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.memorySuggestion button,
+.memoryApplied button,
+.memoryIgnored button {
+  width: fit-content;
+  padding: 5px 9px;
+  border: 1px solid #9b752e;
+  border-radius: 5px;
+  color: #654a18;
+  background: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.memoryApplied {
+  border-color: #8bc5a2;
+  background: #effaf3;
+  color: #22543d;
+}
+
+.correctionForm {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.correctionForm label {
+  display: grid;
+  gap: 6px;
+}
+
+.correctionForm label span {
+  color: #667085;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.correctionForm input,
+.correctionForm select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #bfc7d5;
+  border-radius: 8px;
+  background: #ffffff;
+  font: inherit;
+}
+
+.correctionNote,
+.recommendations > p:last-child {
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.correctionButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.correctionOnce {
+  border-color: #5d3fd3;
+  color: #5d3fd3;
+  background: #ffffff;
+}
+
+.rememberCorrection {
+  color: #ffffff;
+  background: #5d3fd3;
+}
+
+.correctionSuccess {
+  color: #276749;
+  font-weight: 700;
+}
+
+.recommendations ul {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  padding-left: 22px;
+}
+
+.auditHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.auditHeading h2 {
+  margin-top: 5px;
+}
+
+.auditHeading > strong {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #276749;
+  background: #eaf8ef;
+  font-size: 13px;
+}
+
+.auditTrail {
+  display: grid;
+  gap: 0;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auditTrail li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  padding: 11px 0;
+  border-top: 1px solid #edf0f5;
+  text-transform: capitalize;
+}
+
+.auditTrail span {
+  color: #667085;
+  font-size: 13px;
+}
+
 @media (max-width: 560px) {
+  .appNav,
+  .appNav > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .appNav {
+    gap: 10px;
+  }
+
+  .appNav > div {
+    gap: 8px;
+  }
+
   .reviewCard,
   .reviewMeta,
   .detailHeader {
@@ -479,12 +810,24 @@ h1 {
     flex-direction: column;
   }
 
+  .auditHeading,
+  .auditTrail li {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
   .fieldGrid,
+  .totalsGrid,
   .editableItems fieldset {
     grid-template-columns: 1fr;
   }
 
   .fullWidthField {
+    grid-column: auto;
+  }
+
+  .wideItemField {
     grid-column: auto;
   }
 }

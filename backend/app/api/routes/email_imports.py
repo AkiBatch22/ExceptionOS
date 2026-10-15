@@ -37,7 +37,8 @@ def process_email_import(message_id: str, purchase_order: PurchaseOrder):
     if email_import["status"] != "pending":
         raise HTTPException(status_code=409, detail="Email import already completed")
 
-    result = process_purchase_order(purchase_order)
+    source_document_id = email_import["extraction"].get("document_id")
+    result = process_purchase_order(purchase_order, source_document_id)
 
     if not complete_email_import(message_id):
         raise HTTPException(status_code=409, detail="Email import already completed")

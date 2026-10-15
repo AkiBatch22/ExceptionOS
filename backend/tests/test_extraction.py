@@ -5,8 +5,29 @@ from fastapi.testclient import TestClient
 
 from backend.app.main import app
 from backend.app.schemas.extraction import PurchaseOrderExtraction
+from backend.app.schemas.extraction import LLMPurchaseOrderExtraction
+from backend.app.services.extraction import _normalize_missing_fields
 
 client = TestClient(app)
+
+
+def test_model_schema_avoids_provider_unsupported_decimal_patterns():
+    schema = LLMPurchaseOrderExtraction.model_json_schema()
+
+    assert "pattern" not in str(schema)
+
+
+def test_missing_fields_are_derived_from_processing_requirements():
+    extraction = PurchaseOrderExtraction(
+        po_number="PO-1",
+        customer="Acme Inc.",
+        items=[{"sku": "HD-BLK-M", "quantity": 10, "unit_price": 18}],
+        ship_to="Austin office",
+        subtotal=180,
+        missing_fields=["discount", "tax", "freight"],
+    )
+
+    assert _normalize_missing_fields(extraction).missing_fields == []
 
 
 def test_purchase_order_text_is_extracted():
@@ -28,7 +49,12 @@ def test_purchase_order_text_is_extracted():
         )
 
     assert response.status_code == 200
-    assert response.json() == {
+    body = response.json()
+    assert body["extraction_quality"]["score"] == 0.8
+    assert body["suggested_corrections"] == []
+    assert {key: value for key, value in body.items() if key not in {
+        "extraction_quality", "suggested_corrections"
+    }} == {
         "po_number": "PO-4832",
         "customer": "Acme Inc.",
         "items": [

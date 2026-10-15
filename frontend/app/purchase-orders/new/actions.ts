@@ -1,15 +1,43 @@
 "use server";
 
+export type SuggestedCorrection = {
+  pattern_id: number;
+  party_label: string;
+  field_path: string;
+  original_value: string;
+  corrected_value: string;
+  confirmation_count: number;
+  status: "suggestion_only" | "trusted_suggestion";
+};
+
 export type Extraction = {
+  document_id?: string | null;
+  extraction_quality?: {
+    score: number;
+    level: "high" | "medium" | "low";
+    signals: string[];
+  } | null;
   po_number: string | null;
   customer: string | null;
+  po_date?: string | null;
+  requested_delivery_date?: string | null;
+  currency?: string | null;
   items: Array<{
     sku: string | null;
+    description?: string | null;
     quantity: number | null;
     unit_price: number | null;
+    line_total?: number | string | null;
+    decoration_requirements?: string[] | null;
   }>;
   ship_to: string | null;
+  subtotal?: number | string | null;
+  discount?: number | string | null;
+  tax?: number | string | null;
+  freight?: number | string | null;
+  total?: number | string | null;
   missing_fields: string[];
+  suggested_corrections?: SuggestedCorrection[];
 };
 
 export type EmailSource = {

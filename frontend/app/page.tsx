@@ -66,9 +66,14 @@ export default async function Home() {
         <p className="eyebrow">ExceptionOS</p>
         <h1>Operations dashboard</h1>
         <p className="subtitle">Imported orders and human-review decisions.</p>
-        <Link className="primaryLink" href="/purchase-orders/new">
-          Extract a purchase order
-        </Link>
+        <div className="headerActions">
+          <Link className="primaryLink" href="/purchase-orders/new">
+            Extract a purchase order
+          </Link>
+          <Link className="secondaryLink" href="/orders">
+            View created orders
+          </Link>
+        </div>
       </header>
 
       <section className="dashboardSection">

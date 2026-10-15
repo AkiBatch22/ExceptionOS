@@ -4,8 +4,11 @@ from backend.app.services.email_imports import (
     record_email_import,
 )
 from backend.app.services.extraction import extract_purchase_order
+from backend.app.services.extraction_quality import assess_extraction_quality
+from backend.app.services.documents import store_document
 from backend.app.services.inbox import fetch_unread_emails, mark_email_processed
-from backend.app.services.pdf import extract_pdf_text
+from backend.app.services.pdf import extract_pdf_text, split_pdf_pages
+from backend.app.schemas.extraction import PurchaseOrderExtractionResult
 
 
 class NoImportableEmail(Exception):
@@ -37,7 +40,18 @@ def import_next_email():
         raise NoImportableEmail
 
     text = extract_pdf_text(parsed_email["pdf_bytes"])
-    purchase_order = extract_purchase_order(text)
+    extraction = extract_purchase_order(text)
+    document_id = store_document(
+        parsed_email["attachment_name"],
+        "application/pdf",
+        parsed_email["pdf_bytes"],
+        split_pdf_pages(text),
+    )
+    purchase_order = PurchaseOrderExtractionResult(
+        **extraction.model_dump(),
+        document_id=document_id,
+        extraction_quality=assess_extraction_quality(extraction, text),
+    )
     record_email_import(
         message_id=parsed_email["message_id"],
         imap_uid=selected_email["uid"],

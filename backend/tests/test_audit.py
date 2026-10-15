@@ -22,16 +22,16 @@ def test_created_order_events_can_be_read():
     response = client.get("/purchase-orders/PO-READY/events")
 
     assert response.status_code == 200
-    assert response.json() == {
-        "po_number": "PO-READY",
-        "events": [
-            {"event": "purchase_order_received", "details": {}},
-            {
-                "event": "erp_order_created",
-                "details": {"erp_order_id": "ERP-PO-READY"},
-            },
-        ],
-    }
+    body = response.json()
+    assert body["po_number"] == "PO-READY"
+    assert [event["event"] for event in body["events"]] == [
+        "purchase_order_received",
+        "assessment_completed",
+        "erp_order_created",
+    ]
+    assert all(event["created_at"] for event in body["events"])
+    assert body["events"][1]["details"]["duration_ms"] >= 0
+    assert body["events"][2]["details"] == {"erp_order_id": "ERP-PO-READY"}
 
 
 def test_approved_review_events_can_be_read():
@@ -55,15 +55,16 @@ def test_approved_review_events_can_be_read():
     response = client.get("/purchase-orders/PO-REVIEW/events")
 
     assert response.status_code == 200
-    assert response.json()["events"] == [
-        {"event": "purchase_order_received", "details": {}},
-        {"event": "review_created", "details": {"review_id": review_id}},
-        {"event": "review_approved", "details": {"review_id": review_id}},
-        {
-            "event": "erp_order_created",
-            "details": {"erp_order_id": "ERP-PO-REVIEW"},
-        },
+    events = response.json()["events"]
+    assert [event["event"] for event in events] == [
+        "purchase_order_received",
+        "assessment_completed",
+        "review_created",
+        "review_approved",
+        "erp_order_created",
     ]
+    assert events[2]["details"] == {"review_id": review_id}
+    assert all(event["created_at"] for event in events)
 
 
 def test_rejected_review_records_no_order_event():
@@ -86,10 +87,10 @@ def test_rejected_review_records_no_order_event():
 
     response = client.get("/purchase-orders/PO-REJECTED/events")
 
-    assert response.json()["events"][-1] == {
-        "event": "review_rejected",
-        "details": {"review_id": review_id},
-    }
+    last_event = response.json()["events"][-1]
+    assert last_event["event"] == "review_rejected"
+    assert last_event["details"] == {"review_id": review_id}
+    assert last_event["created_at"]
     assert get_order("ERP-PO-REJECTED") is None
 
 

@@ -10,6 +10,9 @@ export type AssessmentIssue = {
   available?: number | null;
   po_price?: number;
   erp_price?: number;
+  item_index?: number;
+  document_value?: number;
+  expected_value?: number;
 };
 
 export type AssessmentState = {

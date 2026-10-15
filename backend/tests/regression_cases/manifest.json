@@ -1,0 +1,284 @@
+[
+  {
+    "id": "01_clean_digital",
+    "title": "Clean digital purchase order",
+    "depicts": "A clear one-page PDF with a complete header, one line item, totals, and delivery details.",
+    "expected": {
+      "po_number": "PO-REG-001",
+      "customer": "Acme Inc.",
+      "currency": "USD",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 20,
+          "unit_price": 18,
+          "line_total": 360
+        }
+      ],
+      "subtotal": 360,
+      "total": 360
+    },
+    "file": "01_clean_digital.pdf"
+  },
+  {
+    "id": "02_low_quality_scan",
+    "title": "Low-resolution scanned PO",
+    "depicts": "A rasterized, low-resolution page that contains no selectable PDF text and must use OCR.",
+    "expected": {
+      "po_number": "PO-REG-002",
+      "customer": "Acme Inc.",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 12,
+          "unit_price": 18
+        }
+      ]
+    },
+    "file": "02_low_quality_scan.pdf"
+  },
+  {
+    "id": "03_rotated_scan",
+    "title": "Rotated scanned PO",
+    "depicts": "A scanned purchase order rotated by 90 degrees, testing orientation handling before OCR.",
+    "expected": {
+      "po_number": "PO-REG-003",
+      "customer": "Acme Inc.",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 8,
+          "unit_price": 18
+        }
+      ]
+    },
+    "file": "03_rotated_scan.pdf"
+  },
+  {
+    "id": "04_multi_page_table",
+    "title": "Line-item table continued across pages",
+    "depicts": "A two-page PO where the item table continues on page two and totals appear only at the end.",
+    "expected": {
+      "po_number": "PO-REG-004",
+      "customer": "Acme Inc.",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 10,
+          "unit_price": 18
+        },
+        {
+          "sku": "HD-BLK-XL",
+          "quantity": 5,
+          "unit_price": 20
+        }
+      ],
+      "subtotal": 280,
+      "total": 280
+    },
+    "file": "04_multi_page_table.pdf"
+  },
+  {
+    "id": "05_repeated_table_headers",
+    "title": "Repeated headers on every page",
+    "depicts": "A multi-page table whose column headings repeat, testing that headings are not extracted as products.",
+    "expected": {
+      "po_number": "PO-REG-005",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 6,
+          "unit_price": 18
+        },
+        {
+          "sku": "HD-BLK-XL",
+          "quantity": 3,
+          "unit_price": 20
+        }
+      ]
+    },
+    "file": "05_repeated_table_headers.pdf"
+  },
+  {
+    "id": "06_wrapped_item_description",
+    "title": "Wrapped and split line-item description",
+    "depicts": "A long product description and decoration note wrapped across several lines between the SKU and numeric columns.",
+    "expected": {
+      "po_number": "PO-REG-006",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "description": "Premium heavyweight black hoodie with recycled lining",
+          "quantity": 15,
+          "unit_price": 18,
+          "decoration_requirements": [
+            "White Acme logo embroidered on left chest"
+          ]
+        }
+      ]
+    },
+    "file": "06_wrapped_item_description.pdf"
+  },
+  {
+    "id": "07_handwritten_style_note",
+    "title": "Handwritten-style rush instruction",
+    "depicts": "A normal PO with an angled handwritten-style note requesting expedited delivery.",
+    "expected": {
+      "po_number": "PO-REG-007",
+      "requested_delivery_date": "2026-11-02",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 10,
+          "unit_price": 18
+        }
+      ]
+    },
+    "file": "07_handwritten_style_note.pdf"
+  },
+  {
+    "id": "08_stamp_over_text",
+    "title": "Approval stamp overlapping text",
+    "depicts": "A large red approval stamp partially covering the line-item area, testing noisy visual overlays.",
+    "expected": {
+      "po_number": "PO-REG-008",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 25,
+          "unit_price": 18
+        }
+      ]
+    },
+    "file": "08_stamp_over_text.pdf"
+  },
+  {
+    "id": "09_missing_po_number",
+    "title": "Missing required PO number",
+    "depicts": "An otherwise complete order with no PO number, testing explicit missing-field detection and safe review routing.",
+    "expected": {
+      "po_number": null,
+      "missing_fields": [
+        "po_number"
+      ],
+      "customer": "Acme Inc."
+    },
+    "file": "09_missing_po_number.pdf"
+  },
+  {
+    "id": "10_conflicting_totals",
+    "title": "Mathematically inconsistent totals",
+    "depicts": "Ten units at $18 but a $200 line total and grand total, testing deterministic reconciliation.",
+    "expected": {
+      "po_number": "PO-REG-010",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 10,
+          "unit_price": 18,
+          "line_total": 200
+        }
+      ],
+      "subtotal": 200,
+      "total": 200
+    },
+    "expected_issues": [
+      "line_total_mismatch",
+      "subtotal_mismatch"
+    ],
+    "file": "10_conflicting_totals.pdf"
+  },
+  {
+    "id": "11_multiple_currencies",
+    "title": "Conflicting currencies",
+    "depicts": "The header says USD while the line item and total use EUR, testing ambiguity rather than silent guessing.",
+    "expected": {
+      "po_number": "PO-REG-011",
+      "currency": null,
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 10,
+          "unit_price": 18
+        }
+      ]
+    },
+    "file": "11_multiple_currencies.pdf"
+  },
+  {
+    "id": "12_european_number_format",
+    "title": "European decimal and thousands separators",
+    "depicts": "Prices use comma decimals and period thousands separators, testing locale-aware normalization.",
+    "expected": {
+      "po_number": "PO-REG-012",
+      "currency": "EUR",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 100,
+          "unit_price": 18.5,
+          "line_total": 1850
+        }
+      ],
+      "total": 1850
+    },
+    "file": "12_european_number_format.pdf"
+  },
+  {
+    "id": "13_multiple_ship_to_addresses",
+    "title": "Split shipment to two addresses",
+    "depicts": "One PO requests separate quantities for Austin and Dallas, exposing the current single-address model limitation.",
+    "expected": {
+      "po_number": "PO-REG-013",
+      "ship_to": null,
+      "missing_fields": [
+        "ship_to"
+      ],
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 20,
+          "unit_price": 18
+        }
+      ]
+    },
+    "file": "13_multiple_ship_to_addresses.pdf"
+  },
+  {
+    "id": "14_decoration_in_footnote",
+    "title": "Decoration requirements hidden in footnotes",
+    "depicts": "Logo method, position, colour, and artwork reference appear in small-print footnotes rather than the item row.",
+    "expected": {
+      "po_number": "PO-REG-014",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 30,
+          "unit_price": 18,
+          "decoration_requirements": [
+            "Embroider Acme logo on left chest in white thread",
+            "Artwork reference ACME-LOGO-V3"
+          ]
+        }
+      ]
+    },
+    "file": "14_decoration_in_footnote.pdf"
+  },
+  {
+    "id": "15_mixed_document_bundle",
+    "title": "PO bundled with artwork and terms",
+    "depicts": "A three-page file containing the PO, an artwork page, and legal terms, testing page classification and irrelevant-content resistance.",
+    "expected": {
+      "po_number": "PO-REG-015",
+      "customer": "Acme Inc.",
+      "items": [
+        {
+          "sku": "HD-BLK-M",
+          "quantity": 40,
+          "unit_price": 18
+        }
+      ]
+    },
+    "file": "15_mixed_document_bundle.pdf"
+  }
+]

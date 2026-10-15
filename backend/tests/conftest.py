@@ -6,6 +6,8 @@ from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from backend.app.core.database import get_connection, get_database_url
 from backend.init_db import initialize_database
 
+os.environ["ENABLE_LLM_RECOMMENDATIONS"] = "false"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def test_database():
@@ -25,7 +27,8 @@ def clean_database(test_database):
     with get_connection() as connection:
         connection.execute(
             """
-            TRUNCATE email_imports, audit_events, reviews, erp_orders
+            TRUNCATE source_lookups, review_corrections, correction_patterns,
+                email_imports, audit_events, reviews, erp_orders, source_documents
             RESTART IDENTITY
             """
         )

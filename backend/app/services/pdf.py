@@ -18,12 +18,16 @@ def extract_pdf_text(pdf_bytes: bytes):
     if any(not text.strip() for text in page_texts):
         page_texts = _extract_scanned_pages(pdf_bytes, page_texts)
 
-    text = "\n".join(page_texts)
+    text = "\n\f\n".join(page_texts)
 
     if not text.strip():
         raise ValueError("OCR could not find text in the PDF")
 
     return text
+
+
+def split_pdf_pages(text: str):
+    return text.split("\n\f\n")
 
 
 def _extract_scanned_pages(pdf_bytes: bytes, page_texts: list[str]):

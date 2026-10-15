@@ -18,7 +18,7 @@ def get_events(po_number: str):
     with get_connection() as connection:
         rows = connection.execute(
             """
-            SELECT event, details
+            SELECT event, details, created_at
             FROM audit_events
             WHERE po_number = %s
             ORDER BY id
@@ -26,4 +26,7 @@ def get_events(po_number: str):
             (po_number,),
         ).fetchall()
 
-    return [{"event": event, "details": details} for event, details in rows]
+    return [
+        {"event": event, "details": details, "created_at": created_at}
+        for event, details, created_at in rows
+    ]

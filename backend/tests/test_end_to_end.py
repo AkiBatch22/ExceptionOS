@@ -158,6 +158,7 @@ def test_email_to_erp_order_workflow(monkeypatch):
     events = client.get("/purchase-orders/PO-E2E-READY/events").json()["events"]
     assert [event["event"] for event in events] == [
         "purchase_order_received",
+        "assessment_completed",
         "erp_order_created",
     ]
 
@@ -210,5 +211,6 @@ def test_email_to_human_review_workflow(monkeypatch):
     events = client.get("/purchase-orders/PO-E2E-REVIEW/events").json()["events"]
     assert [event["event"] for event in events] == [
         "purchase_order_received",
+        "assessment_completed",
         "review_created",
     ]

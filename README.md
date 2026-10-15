@@ -7,6 +7,7 @@ The key design boundary is simple:
 ```text
 AI extracts information.
 Deterministic application code controls business execution.
+Document evidence is retrieved only when an operator asks for it.
 ```
 
 ## What it demonstrates
@@ -14,11 +15,17 @@ Deterministic application code controls business execution.
 - FastAPI and Pydantic request validation
 - Next.js and React operator workflows
 - Groq structured output with `openai/gpt-oss-20b`
+- rich PO fields for dates, currency, totals, descriptions, and decoration requirements
 - PDF text extraction and local Tesseract OCR fallback
 - EML parsing and manual or automatic IMAP ingestion
 - PostgreSQL persistence, audit history, and email deduplication
 - deterministic customer, inventory, and price checks
 - human-review approval and rejection
+- review-time corrections that can be applied once or remembered as supplier-specific suggestions
+- visible, reversible correction suggestions that are never applied silently
+- allowlisted recommendations for routine issues and measured audit timing
+- deterministic line, subtotal, tax, freight, discount, and grand-total reconciliation
+- on-demand, cached source lookup without an automatic second AI call
 - imported-draft lifecycle management
 - liveness, readiness, limits, timeouts, and end-to-end tests
 
@@ -38,6 +45,15 @@ Deterministic assessment
    ↓         ↓
 ERP order   Human review
 ```
+
+When an operator chooses **Apply and remember for supplier**, ExceptionOS stores
+the original and corrected value in PostgreSQL. A matching value on a later PO
+is highlighted with **Apply**, **Ignore**, and **Undo** controls. The stored rule
+is a suggestion only; it does not mutate extracted data or bypass assessment.
+This matching is deterministic and adds no model call. Optional Groq-generated
+review recommendations are restricted to routine issue categories and fall back
+to deterministic guidance when unavailable. Set
+`ENABLE_LLM_RECOMMENDATIONS=false` to disable those recommendation calls.
 
 ## Documentation
 
@@ -118,6 +134,31 @@ Check the running backend:
 - `GET /ready` confirms PostgreSQL schema and OCR readiness.
 
 The backend suite includes complete success and human-review workflows. IMAP and Groq are mocked at their external boundaries; routes, generated PDF parsing, PostgreSQL state, deterministic processing, lifecycle transitions, and audit events run normally.
+
+## Messy-PO regression pack
+
+Fifteen synthetic PDFs and their expected outputs live in
+[`backend/tests/regression_cases`](backend/tests/regression_cases). They cover
+scans, rotation, multi-page tables, repeated headers, wrapped descriptions,
+handwritten-style notes, stamps, missing fields, conflicting totals, currency
+ambiguity, European number formats, split shipping, decoration footnotes, and
+mixed document bundles.
+
+Regenerate the fixtures after editing their definitions:
+
+```powershell
+.\.venv\Scripts\python.exe -m backend.scripts.generate_po_regression_set
+```
+
+With the API running, execute the extraction benchmark:
+
+```powershell
+.\.venv\Scripts\python.exe -m backend.scripts.run_po_regression
+```
+
+The benchmark intentionally makes one Groq extraction request per fixture, so
+run it only when those 15 model calls are desired. Ordinary automated tests do
+not make Groq calls.
 
 ## Project status
 

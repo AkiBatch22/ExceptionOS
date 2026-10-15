@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 
 import type { Extraction } from "./actions";
+import MemoryAwareInput from "./memory-aware-input";
 import {
   assessPurchaseOrder,
   type AssessmentIssue,
@@ -40,6 +41,12 @@ function Issue({ issue }: { issue: AssessmentIssue }) {
       )}
       {issue.po_price !== undefined && <p>PO price: ${issue.po_price}</p>}
       {issue.erp_price !== undefined && <p>ERP price: ${issue.erp_price}</p>}
+      {issue.document_value !== undefined && (
+        <p>Document value: {issue.document_value}</p>
+      )}
+      {issue.expected_value !== undefined && (
+        <p>Calculated value: {issue.expected_value}</p>
+      )}
     </article>
   );
 }
@@ -62,11 +69,31 @@ export default function AssessmentForm({
   const items = extraction.items.length > 0
     ? extraction.items
     : [{ sku: null, quantity: null, unit_price: null }];
+  const suggestionFor = (fieldPath: string) =>
+    extraction.suggested_corrections?.find(
+      (suggestion) => suggestion.field_path === fieldPath,
+    );
 
   return (
     <section className="detailSection extractionResult">
       <p className="eyebrow">AI preview</p>
       <h2>Review and correct</h2>
+
+      {extraction.extraction_quality && (
+        <div className={`qualitySummary ${extraction.extraction_quality.level}`}>
+          <strong>
+            Extraction confidence: {extraction.extraction_quality.level} ({Math.round(
+              extraction.extraction_quality.score * 100,
+            )}%)
+          </strong>
+          <ul>
+            {extraction.extraction_quality.signals.map((signal) => (
+              <li key={signal}>{signal}</li>
+            ))}
+          </ul>
+          <p>This is a rule-based quality signal, not an AI-generated certainty.</p>
+        </div>
+      )}
 
       {extraction.missing_fields.length > 0 && (
         <div className="missingFields">
@@ -81,6 +108,9 @@ export default function AssessmentForm({
 
       <form action={formAction} className="confirmationForm">
         {messageId && <input name="message_id" type="hidden" value={messageId} />}
+        {extraction.document_id && (
+          <input name="document_id" type="hidden" value={extraction.document_id} />
+        )}
         <div className="fieldGrid">
           <label>
             <span>PO number</span>
@@ -88,11 +118,42 @@ export default function AssessmentForm({
           </label>
           <label>
             <span>Customer</span>
-            <input defaultValue={extraction.customer ?? ""} name="customer" required />
+            <MemoryAwareInput
+              defaultValue={extraction.customer ?? ""}
+              name="customer"
+              required
+              suggestion={suggestionFor("customer")}
+            />
           </label>
           <label className="fullWidthField">
             <span>Ship to</span>
-            <input defaultValue={extraction.ship_to ?? ""} name="ship_to" required />
+            <MemoryAwareInput
+              defaultValue={extraction.ship_to ?? ""}
+              name="ship_to"
+              required
+              suggestion={suggestionFor("ship_to")}
+            />
+          </label>
+          <label>
+            <span>PO date</span>
+            <input defaultValue={extraction.po_date ?? ""} name="po_date" type="date" />
+          </label>
+          <label>
+            <span>Requested delivery date</span>
+            <input
+              defaultValue={extraction.requested_delivery_date ?? ""}
+              name="requested_delivery_date"
+              type="date"
+            />
+          </label>
+          <label>
+            <span>Currency</span>
+            <input
+              defaultValue={extraction.currency ?? ""}
+              maxLength={3}
+              name="currency"
+              placeholder="USD"
+            />
           </label>
         </div>
 
@@ -104,10 +165,18 @@ export default function AssessmentForm({
               <legend>Item {index + 1}</legend>
               <label>
                 <span>SKU</span>
-                <input
+                <MemoryAwareInput
                   defaultValue={item.sku ?? ""}
                   name={`items.${index}.sku`}
                   required
+                  suggestion={suggestionFor(`items[${index}].sku`)}
+                />
+              </label>
+              <label className="wideItemField">
+                <span>Description</span>
+                <input
+                  defaultValue={item.description ?? ""}
+                  name={`items.${index}.description`}
                 />
               </label>
               <label>
@@ -132,8 +201,44 @@ export default function AssessmentForm({
                   type="number"
                 />
               </label>
+              <label>
+                <span>Line total</span>
+                <input
+                  defaultValue={item.line_total ?? ""}
+                  min="0"
+                  name={`items.${index}.line_total`}
+                  step="0.01"
+                  type="number"
+                />
+              </label>
+              <label className="wideItemField">
+                <span>Decoration requirements, one per line</span>
+                <textarea
+                  defaultValue={(item.decoration_requirements ?? []).join("\n")}
+                  name={`items.${index}.decoration_requirements`}
+                  rows={3}
+                />
+              </label>
             </fieldset>
           ))}
+        </div>
+
+        <h3>Financial totals</h3>
+        <div className="totalsGrid">
+          {(["subtotal", "discount", "tax", "freight", "total"] as const).map(
+            (field) => (
+              <label key={field}>
+                <span>{formatReason(field)}</span>
+                <input
+                  defaultValue={extraction[field] ?? ""}
+                  min="0"
+                  name={field}
+                  step="0.01"
+                  type="number"
+                />
+              </label>
+            ),
+          )}
         </div>
 
         <div className="orderActions">
@@ -146,12 +251,20 @@ export default function AssessmentForm({
           </button>
           {state.assessment && processingState.result === null && (
             <button
-              className="button processButton"
+              className={`button ${
+                state.assessment.decision === "human_review_required"
+                  ? "humanReviewButton"
+                  : "processButton"
+              }`}
               disabled={isPending || isProcessing}
               formAction={processingAction}
               type="submit"
             >
-              {isProcessing ? "Processing…" : "Process purchase order"}
+              {isProcessing
+                ? "Processing…"
+                : state.assessment.decision === "human_review_required"
+                  ? "Create human review"
+                  : "Create ERP order"}
             </button>
           )}
         </div>
@@ -185,6 +298,14 @@ export default function AssessmentForm({
             <>
               <h3>ERP order created</h3>
               <p>{processingState.result.erp_order_id}</p>
+              {processingState.result.erp_order_id && (
+                <Link
+                  className="primaryLink"
+                  href={`/orders/${encodeURIComponent(processingState.result.erp_order_id)}`}
+                >
+                  Open created order
+                </Link>
+              )}
             </>
           ) : (
             <>

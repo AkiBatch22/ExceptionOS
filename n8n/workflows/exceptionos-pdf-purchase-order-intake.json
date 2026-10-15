@@ -4,10 +4,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:8000/purchase-orders/process",
+        "url": "={{ 'http://127.0.0.1:8000/purchase-orders/process?document_id=' + $json.document_id }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  po_number: $json.po_number,\n  customer: $json.customer,\n  items: $json.items,\n  ship_to: $json.ship_to\n} }}",
+        "jsonBody": "={{ {\n  po_number: $json.po_number,\n  customer: $json.customer,\n  po_date: $json.po_date,\n  requested_delivery_date: $json.requested_delivery_date,\n  currency: $json.currency,\n  items: $json.items,\n  ship_to: $json.ship_to,\n  subtotal: $json.subtotal,\n  discount: $json.discount,\n  tax: $json.tax,\n  freight: $json.freight,\n  total: $json.total\n} }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -50,7 +50,7 @@
     {
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "={{ {\n  po_number: $json.po_number,\n  customer: $json.customer,\n  items: $json.items,\n  ship_to: $json.ship_to\n} }}",
+        "jsonOutput": "={{ {\n  document_id: $json.document_id,\n  po_number: $json.po_number,\n  customer: $json.customer,\n  po_date: $json.po_date,\n  requested_delivery_date: $json.requested_delivery_date,\n  currency: $json.currency,\n  items: $json.items,\n  ship_to: $json.ship_to,\n  subtotal: $json.subtotal,\n  discount: $json.discount,\n  tax: $json.tax,\n  freight: $json.freight,\n  total: $json.total\n} }}",
         "options": {}
       },
       "type": "n8n-nodes-base.set",
