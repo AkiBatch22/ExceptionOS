@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { requireSession } from "../../lib/auth";
+import { apiFetch } from "../../lib/api-fetch";
+
 type OrderSummary = {
   erp_order_id: string;
   po_number: string;
@@ -14,7 +17,7 @@ type OrderSummary = {
 async function getOrders(): Promise<OrderSummary[] | null> {
   const apiUrl = process.env.API_URL ?? "http://127.0.0.1:8000";
   try {
-    const response = await fetch(`${apiUrl}/erp-orders`, { cache: "no-store" });
+    const response = await apiFetch(`${apiUrl}/erp-orders`, { cache: "no-store" });
     if (!response.ok) return null;
     return ((await response.json()) as { orders: OrderSummary[] }).orders;
   } catch {
@@ -23,6 +26,7 @@ async function getOrders(): Promise<OrderSummary[] | null> {
 }
 
 export default async function OrdersPage() {
+  await requireSession();
   const orders = await getOrders();
 
   return (

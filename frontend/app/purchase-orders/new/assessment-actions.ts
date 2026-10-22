@@ -1,5 +1,7 @@
 "use server";
 
+import { requireSession } from "../../../lib/auth";
+import { apiFetch } from "../../../lib/api-fetch";
 import { parsePurchaseOrderForm } from "./form-data";
 
 export type AssessmentIssue = {
@@ -27,6 +29,7 @@ export async function assessPurchaseOrder(
   _previousState: AssessmentState,
   formData: FormData,
 ): Promise<AssessmentState> {
+  await requireSession();
   const { purchaseOrder, error } = parsePurchaseOrderForm(formData);
 
   if (purchaseOrder === null) {
@@ -37,7 +40,7 @@ export async function assessPurchaseOrder(
   let response: Response;
 
   try {
-    response = await fetch(`${apiUrl}/purchase-orders/assess`, {
+    response = await apiFetch(`${apiUrl}/purchase-orders/assess`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(purchaseOrder),

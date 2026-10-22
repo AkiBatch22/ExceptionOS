@@ -1,7 +1,8 @@
 from time import perf_counter
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from backend.app.core.rate_limit import enforce_extraction_rate_limit
 from backend.app.schemas.extraction import (
     EmailPurchaseOrderExtraction,
     PurchaseOrderExtraction,
@@ -68,6 +69,7 @@ def extraction_result(
     "/extract",
     response_model=PurchaseOrderExtractionResult,
     response_model_exclude_none=True,
+    dependencies=[Depends(enforce_extraction_rate_limit)],
 )
 def extract(request: PurchaseOrderText):
     started_at = perf_counter()
@@ -88,6 +90,7 @@ def extract(request: PurchaseOrderText):
     "/extract-pdf",
     response_model=PurchaseOrderExtractionResult,
     response_model_exclude_none=True,
+    dependencies=[Depends(enforce_extraction_rate_limit)],
 )
 async def extract_pdf(file: UploadFile = File(...)):
     started_at = perf_counter()
@@ -126,6 +129,7 @@ async def extract_pdf(file: UploadFile = File(...)):
     "/extract-email",
     response_model=EmailPurchaseOrderExtraction,
     response_model_exclude_none=True,
+    dependencies=[Depends(enforce_extraction_rate_limit)],
 )
 async def extract_email(file: UploadFile = File(...)):
     started_at = perf_counter()
@@ -172,7 +176,11 @@ async def extract_email(file: UploadFile = File(...)):
     }
 
 
-@router.post("/import-email", response_model=EmailPurchaseOrderExtraction)
+@router.post(
+    "/import-email",
+    response_model=EmailPurchaseOrderExtraction,
+    dependencies=[Depends(enforce_extraction_rate_limit)],
+)
 def import_email():
     try:
         return import_next_email()

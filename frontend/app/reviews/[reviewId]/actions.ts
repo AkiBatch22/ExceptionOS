@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { requireSession } from "../../../lib/auth";
+import { apiFetch } from "../../../lib/api-fetch";
+
 export type DecisionState = {
   error: string | null;
 };
@@ -17,6 +20,7 @@ export async function submitReviewCorrection(
   _previousState: CorrectionState,
   formData: FormData,
 ): Promise<CorrectionState> {
+  await requireSession();
   const fieldPath = formData.get("field_path");
   const correctedValue = formData.get("corrected_value");
   const remember = formData.get("remember") === "true";
@@ -28,7 +32,7 @@ export async function submitReviewCorrection(
   const apiUrl = process.env.API_URL ?? "http://127.0.0.1:8000";
   let response: Response;
   try {
-    response = await fetch(`${apiUrl}/reviews/${encodeURIComponent(reviewId)}/corrections`, {
+    response = await apiFetch(`${apiUrl}/reviews/${encodeURIComponent(reviewId)}/corrections`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -61,6 +65,7 @@ export async function submitReviewDecision(
   _previousState: DecisionState,
   formData: FormData,
 ): Promise<DecisionState> {
+  await requireSession();
   const decision = formData.get("decision");
 
   if (decision !== "approved" && decision !== "rejected") {
@@ -71,7 +76,7 @@ export async function submitReviewDecision(
   let response: Response;
 
   try {
-    response = await fetch(
+    response = await apiFetch(
       `${apiUrl}/reviews/${encodeURIComponent(reviewId)}/decision`,
       {
         method: "POST",

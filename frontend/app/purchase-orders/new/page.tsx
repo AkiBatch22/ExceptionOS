@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { requireSession } from "../../../lib/auth";
+import { apiFetch } from "../../../lib/api-fetch";
 import type { EmailSource, Extraction } from "./actions";
 import ExtractionForm from "./extraction-form";
 
@@ -13,7 +15,7 @@ async function getEmailImport(messageId: string): Promise<EmailImport | null> {
   const query = new URLSearchParams({ message_id: messageId });
 
   try {
-    const response = await fetch(`${apiUrl}/email-imports/detail?${query}`, {
+    const response = await apiFetch(`${apiUrl}/email-imports/detail?${query}`, {
       cache: "no-store",
     });
 
@@ -33,6 +35,7 @@ export default async function NewPurchaseOrderPage({
 }: {
   searchParams: Promise<{ message_id?: string }>;
 }) {
+  await requireSession();
   const { message_id: messageId } = await searchParams;
   const emailImport = messageId ? await getEmailImport(messageId) : null;
 

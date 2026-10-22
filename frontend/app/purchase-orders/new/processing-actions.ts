@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireSession } from "../../../lib/auth";
+import { apiFetch } from "../../../lib/api-fetch";
 import { parsePurchaseOrderForm } from "./form-data";
 
 export type ProcessingState = {
@@ -17,6 +19,7 @@ export async function processPurchaseOrder(
   _previousState: ProcessingState,
   formData: FormData,
 ): Promise<ProcessingState> {
+  await requireSession();
   const { purchaseOrder, error } = parsePurchaseOrderForm(formData);
 
   if (purchaseOrder === null) {
@@ -41,7 +44,7 @@ export async function processPurchaseOrder(
   let response: Response;
 
   try {
-    response = await fetch(`${apiUrl}${endpoint}${query}`, {
+    response = await apiFetch(`${apiUrl}${endpoint}${query}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(purchaseOrder),
@@ -67,7 +70,7 @@ export async function processPurchaseOrder(
   ];
   await Promise.allSettled(
     feedback.map(({ id, feedback: patternFeedback }) =>
-      fetch(`${apiUrl}/reviews/patterns/${encodeURIComponent(String(id))}/feedback`, {
+      apiFetch(`${apiUrl}/reviews/patterns/${encodeURIComponent(String(id))}/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ feedback: patternFeedback, po_number: poNumber }),

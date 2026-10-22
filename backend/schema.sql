@@ -1,8 +1,12 @@
 CREATE TABLE IF NOT EXISTS erp_orders (
     erp_order_id TEXT PRIMARY KEY,
     po_number TEXT UNIQUE NOT NULL,
-    purchase_order JSONB NOT NULL
+    purchase_order JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE erp_orders
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
 CREATE TABLE IF NOT EXISTS reviews (
     review_id TEXT PRIMARY KEY,

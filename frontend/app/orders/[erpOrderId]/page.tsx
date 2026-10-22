@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { requireSession } from "../../../lib/auth";
+import { apiFetch } from "../../../lib/api-fetch";
+
 type CreatedOrder = {
   erp_order_id: string;
   po_number: string;
@@ -35,7 +38,7 @@ async function getOrder(erpOrderId: string): Promise<CreatedOrder | null> {
   const apiUrl = process.env.API_URL ?? "http://127.0.0.1:8000";
   let response: Response;
   try {
-    response = await fetch(
+    response = await apiFetch(
       `${apiUrl}/erp-orders/${encodeURIComponent(erpOrderId)}`,
       { cache: "no-store" },
     );
@@ -56,6 +59,7 @@ export default async function CreatedOrderPage({
 }: {
   params: Promise<{ erpOrderId: string }>;
 }) {
+  await requireSession();
   const { erpOrderId } = await params;
   const order = await getOrder(erpOrderId);
   if (order === null) {

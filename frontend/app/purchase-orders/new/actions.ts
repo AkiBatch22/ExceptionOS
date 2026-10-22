@@ -1,5 +1,8 @@
 "use server";
 
+import { requireSession } from "../../../lib/auth";
+import { apiFetch } from "../../../lib/api-fetch";
+
 export type SuggestedCorrection = {
   pattern_id: number;
   party_label: string;
@@ -58,6 +61,7 @@ export async function extractPurchaseOrder(
   _previousState: ExtractionState,
   formData: FormData,
 ): Promise<ExtractionState> {
+  await requireSession();
   if (formData.get("source") === "inbox") {
     return importInboxPurchaseOrder();
   }
@@ -93,7 +97,7 @@ export async function extractPurchaseOrder(
   let response: Response;
 
   try {
-    response = await fetch(`${apiUrl}/purchase-orders/extract`, {
+    response = await apiFetch(`${apiUrl}/purchase-orders/extract`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
@@ -123,7 +127,7 @@ async function extractPdfPurchaseOrder(file: File): Promise<ExtractionState> {
   let response: Response;
 
   try {
-    response = await fetch(`${apiUrl}/purchase-orders/extract-pdf`, {
+    response = await apiFetch(`${apiUrl}/purchase-orders/extract-pdf`, {
       method: "POST",
       body: upload,
     });
@@ -152,7 +156,7 @@ async function extractEmailPurchaseOrder(file: File): Promise<ExtractionState> {
   let response: Response;
 
   try {
-    response = await fetch(`${apiUrl}/purchase-orders/extract-email`, {
+    response = await apiFetch(`${apiUrl}/purchase-orders/extract-email`, {
       method: "POST",
       body: upload,
     });
@@ -195,7 +199,7 @@ async function importInboxPurchaseOrder(): Promise<ExtractionState> {
   let response: Response;
 
   try {
-    response = await fetch(`${apiUrl}/purchase-orders/import-email`, {
+    response = await apiFetch(`${apiUrl}/purchase-orders/import-email`, {
       method: "POST",
     });
   } catch {

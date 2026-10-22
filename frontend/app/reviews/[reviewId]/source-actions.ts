@@ -1,5 +1,8 @@
 "use server";
 
+import { requireSession } from "../../../lib/auth";
+import { apiFetch } from "../../../lib/api-fetch";
+
 export type SourceResult = {
   found: boolean;
   page?: number;
@@ -15,6 +18,7 @@ export async function findFieldSource(input: {
   value: string;
   context?: string;
 }): Promise<SourceResult> {
+  await requireSession();
   const { documentId, fieldPath, value, context = "" } = input;
   if (
     !documentId.startsWith("DOC-") ||
@@ -35,7 +39,7 @@ export async function findFieldSource(input: {
   });
 
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       `${apiUrl}/documents/${encodeURIComponent(documentId)}/source?${query}`,
       { cache: "no-store" },
     );

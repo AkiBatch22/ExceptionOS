@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { requireSession } from "../../../lib/auth";
+import { apiFetch } from "../../../lib/api-fetch";
 import DecisionForm from "./decision-form";
 import CorrectionForm, { type CorrectionOption } from "./correction-form";
 import SourceLookup from "./source-lookup";
@@ -59,7 +61,7 @@ async function getReview(reviewId: string): Promise<Review | null> {
   let response: Response;
 
   try {
-    response = await fetch(`${apiUrl}/reviews/${encodeURIComponent(reviewId)}`, {
+    response = await apiFetch(`${apiUrl}/reviews/${encodeURIComponent(reviewId)}`, {
       cache: "no-store",
     });
   } catch {
@@ -86,6 +88,7 @@ export default async function ReviewPage({
 }: {
   params: Promise<{ reviewId: string }>;
 }) {
+  await requireSession();
   const { reviewId } = await params;
   const review = await getReview(reviewId);
 

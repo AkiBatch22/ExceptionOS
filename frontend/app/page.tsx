@@ -1,5 +1,9 @@
 import Link from "next/link";
 
+import { requireSession } from "../lib/auth";
+import { apiFetch } from "../lib/api-fetch";
+import ResetDemoForm from "./demo/reset-demo-form";
+
 type ReviewSummary = {
   review_id: string;
   po_number: string;
@@ -21,7 +25,7 @@ type EmailImportSummary = {
 async function getPendingReviews(): Promise<ReviewSummary[] | null> {
   try {
     const apiUrl = process.env.API_URL ?? "http://127.0.0.1:8000";
-    const response = await fetch(`${apiUrl}/reviews`, { cache: "no-store" });
+    const response = await apiFetch(`${apiUrl}/reviews`, { cache: "no-store" });
 
     if (!response.ok) {
       return null;
@@ -37,7 +41,7 @@ async function getPendingReviews(): Promise<ReviewSummary[] | null> {
 async function getEmailImports(): Promise<EmailImportSummary[] | null> {
   try {
     const apiUrl = process.env.API_URL ?? "http://127.0.0.1:8000";
-    const response = await fetch(`${apiUrl}/email-imports`, {
+    const response = await apiFetch(`${apiUrl}/email-imports`, {
       cache: "no-store",
     });
 
@@ -55,6 +59,7 @@ async function getEmailImports(): Promise<EmailImportSummary[] | null> {
 }
 
 export default async function Home() {
+  await requireSession();
   const [reviews, emailImports] = await Promise.all([
     getPendingReviews(),
     getEmailImports(),
@@ -136,6 +141,18 @@ export default async function Home() {
           </div>
         )}
       </section>
+
+      {process.env.DEMO_RESET_SECRET && (
+        <section className="dashboardSection detailSection">
+          <p className="eyebrow">Demo administration</p>
+          <h2 className="sectionHeading">Reset temporary data</h2>
+          <p className="subtitle">
+            This removes all uploaded documents, reviews, audit events, correction
+            patterns, and created orders from this demonstration environment.
+          </p>
+          <ResetDemoForm />
+        </section>
+      )}
     </main>
   );
 }

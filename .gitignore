@@ -1,8 +1,13 @@
 .venv/
 .env
+.env.*
+!.env.example
 .pytest_cache/
 __pycache__/
 *.py[cod]
 frontend/.next/
 frontend/node_modules/
+frontend/.env*
+!frontend/.env.example
 backend/tests/regression_cases/latest-results.json
+*.log

@@ -28,6 +28,7 @@ Document evidence is retrieved only when an operator asks for it.
 - on-demand, cached source lookup without an automatic second AI call
 - imported-draft lifecycle management
 - liveness, readiness, limits, timeouts, and end-to-end tests
+- a password-protected private demo mode with expiring uploads and reset controls
 
 ## Workflow
 
@@ -59,6 +60,8 @@ to deterministic guidance when unavailable. Set
 
 - [Architecture](docs/architecture.md) — components, data flow, tables, endpoints, reliability, and limitations
 - [Setup and runbook](docs/setup.md) — installation, configuration, startup, testing, and troubleshooting
+- [Private demo deployment](docs/deployment.md) — container deployment, access protection, retention, and Railway or Render configuration
+- [Free Render demo](docs/render-free-deployment.md) — temporary zero-cost deployment with a shared-key-protected public API
 
 ## Quick start
 
@@ -164,4 +167,8 @@ not make Groq calls.
 
 The planned 30-stage local MVP is complete.
 
-Deliberate non-goals include authentication, cloud deployment, a commercial ERP connection, distributed workers, and LangGraph. These are documented extension points rather than missing requirements.
+The repository includes a single-user, password-protected private-demo mode and
+portable Docker images for the frontend and backend. This is deliberately not a
+production identity system. Production SSO, tenant isolation, a commercial ERP
+connection, distributed workers, malware scanning, and formal data governance
+remain documented extension points rather than prototype requirements.

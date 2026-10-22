@@ -1,7 +1,14 @@
+import { getSession } from "../../../../lib/auth";
+import { apiFetch } from "../../../../lib/api-fetch";
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ documentId: string }> },
 ) {
+  if (!(await getSession())) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   const { documentId } = await context.params;
   if (!documentId.startsWith("DOC-")) {
     return new Response("Invalid document", { status: 400 });
@@ -9,7 +16,7 @@ export async function GET(
 
   const apiUrl = process.env.API_URL ?? "http://127.0.0.1:8000";
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       `${apiUrl}/documents/${encodeURIComponent(documentId)}`,
       { cache: "no-store" },
     );
